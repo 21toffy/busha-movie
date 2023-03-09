@@ -1,0 +1,49 @@
+version: '3.9'
+
+services:
+  app:
+    build:
+      context: .
+    image: movieapi
+    container_name: movieapi
+    restart: always
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./config:/app/config
+    environment:
+      - REDIS_ADDR=redis:6379
+      - DB_HOST=db
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    depends_on:
+      - db
+      - redis
+    # environment:
+    #   POSTGRES_USER: postgres
+    #   POSTGRES_PASSWORD: password
+    #   POSTGRES_DB: movies_db
+    #   DB_HOST: db
+    #   REDIS_ADDR: redis:6379
+
+  db:
+    image: postgres
+    restart: always
+    # environment:
+    #   POSTGRES_USER: postgres
+    #   POSTGRES_PASSWORD: password
+    #   POSTGRES_DB: movies_db
+
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data/pgdata
+      - ./config:/app/config
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+
+  redis:
+    image: redis
+    restart: always
