@@ -107,7 +107,7 @@ type CharactersResponse struct {
 }
 
 //atm current currently
-func FilterAndSortCharacters(characters []Character, filter string, sortBy string, sortOrder string) ([]Character, int, float64, error) {
+func FilterAndSortCharacters(characters []Character, filter string, sortBy string, sortOrder string) ([]Character, int, float64, float64, float64, error) {
 	// Filter characters by gender if filter parameter is present
 	if filter != "" {
 		filteredCharacters := make([]Character, 0)
@@ -140,7 +140,7 @@ func FilterAndSortCharacters(characters []Character, filter string, sortBy strin
 			sort.Slice(characters, func(i, j int) bool { return characters[i].HeightInCM > characters[j].HeightInCM })
 		}
 	default:
-		return nil, 0, 0, customerror.InvalidSortParam
+		return nil, 0, 0, 0, 0, customerror.InvalidSortParam
 	}
 
 	// Calculate metadata
@@ -155,7 +155,7 @@ func FilterAndSortCharacters(characters []Character, filter string, sortBy strin
 	totalHeightInFeet += totalHeightInInches / 12.0
 	totalHeightInInches = int(math.Mod(float64(totalHeightInInches), 12.0))
 
-	return characters, len(characters), float64(totalHeightInCm), nil
+	return characters, len(characters), float64(totalHeightInCm), float64(totalHeightInFeet), float64(totalHeightInInches), nil
 }
 
 // func GetMetadata(characters []Character, genderFilter string) (int, float64, float64)

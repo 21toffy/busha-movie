@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"log"
 
+	"net/http"
+
 	"github.com/21toffy/busha-movie/internal/api"
 	"github.com/21toffy/busha-movie/internal/cache"
 	"github.com/21toffy/busha-movie/internal/config"
 	"github.com/21toffy/busha-movie/internal/database"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 func main() {

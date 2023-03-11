@@ -13,14 +13,63 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func handlePing(c *gin.Context) {
-	c.String(http.StatusOK, "pong")
-}
-
 type CommentRequest struct {
 	Comment string `json:"comment, omitempty" validate:"required,max=500" binding:"required"`
 }
 
+type ErrorResponse struct {
+	Status  int    `json:"status"`
+	Message string `json:"message"`
+}
+
+type CommentsResponse struct {
+	Status   int                `json:"status"`
+	Comments []database.Comment `json:"comments"`
+}
+
+// @BasePath /api/v1
+
+// PingExample godoc
+// @Summary ping example
+// @Schemes
+// @Description do ping
+// @Tags example
+// @Accept json
+// @Produce json
+// @Success 200 {string} pong
+// @Router /ping [get]
+func handlePing() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.JSON(http.StatusOK, "pong")
+	}
+}
+
+// @BasePath /api/v1
+
+// PingExample godoc
+// @Summary hello example
+// @Schemes
+// @Description do hello
+// @Tags hello
+// @Accept json
+// @Produce json
+// @Success 200 {string} hi
+// @Router /hello [get]
+func handleHello() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.JSON(http.StatusOK, "hi")
+	}
+}
+
+// @Summary Fetch film character
+// @Description Fetches all characters for a given film
+// @Tags films
+// @Param id path string true "Film ID"
+// @Produce json
+// @Success 200 {object} []requests.Character
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /film/{id}/character/ [get]
 func FetchFilmCharacter() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
@@ -69,7 +118,7 @@ func FetchFilmCharacter() gin.HandlerFunc {
 		sortBy := strings.TrimSpace(c.Query("sort"))
 		sortOrder := strings.TrimSpace(c.Query("order"))
 
-		characters, numberOfChar, totalHeight, err := requests.FilterAndSortCharacters(charLoaded, filterBy, sortBy, sortOrder)
+		characters, numberOfChar, totalHeight, totalHeightFeet, totalHeightInches, err := requests.FilterAndSortCharacters(charLoaded, filterBy, sortBy, sortOrder)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"status":  http.StatusBadRequest,
@@ -79,13 +128,13 @@ func FetchFilmCharacter() gin.HandlerFunc {
 		}
 
 		// totalHeightInCm, totalHeightInFeet, totalHeightInInches, totalMatches, err := requests.GetMetadata(characters)
-		// if err != nil {
-		// 	c.JSON(http.StatusInternalServerError, gin.H{
-		// 		"status":  http.StatusInternalServerError,
-		// 		"message": err.Error(),
-		// 	})
-		// 	return
-		// }
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  http.StatusInternalServerError,
+				"message": err.Error(),
+			})
+			return
+		}
 
 		c.JSON(http.StatusOK, gin.H{
 			"status": http.StatusOK,
@@ -94,10 +143,8 @@ func FetchFilmCharacter() gin.HandlerFunc {
 				"metadata": gin.H{
 					"totalMatches":    numberOfChar,
 					"totalHeightInCm": totalHeight,
-					// "totalHeightInFeet": gin.H{
-					// 	"feet":   totalHeightInFeet,
-					// 	"inches": totalHeightInInches,
-					// },
+					"feet":            totalHeightFeet,
+					"inches":          totalHeightInches,
 				},
 			},
 		})
@@ -138,6 +185,16 @@ func GetFIlmCommentsHandler() gin.HandlerFunc {
 	}
 }
 
+// GetCommentsHandler returns a handler function that retrieves all comments
+// in reverse chronological order from the database and returns them as JSON.
+//
+// @Summary Get all comments
+// @Description Retrieve all comments in reverse chronological order
+// @ID get-comments
+// @Produce json
+// @Success 200 {object} CommentsResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /film-comment [get]
 func GetCommentsHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		comments, err := database.GetCommentsReverseChronological()
