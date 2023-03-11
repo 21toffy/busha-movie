@@ -4,18 +4,15 @@ import (
 	"encoding/json"
 	"math"
 
-	// "fmt"
 	"github.com/21toffy/busha-movie/internal/cache"
 	"github.com/21toffy/busha-movie/internal/customerror"
 	"github.com/21toffy/busha-movie/internal/database"
 
-	// "github.com/21toffy/busha-movie/internal/requests"
+	"github.com/21toffy/busha-movie/internal/models"
 	"github.com/21toffy/busha-movie/internal/utils"
-	// "io"
-	// "io/ioutil"
+
 	"log"
-	// "math"
-	// "errors"
+
 	"net/http"
 	"sort"
 	"strconv"
@@ -23,93 +20,13 @@ import (
 	"time"
 )
 
-type ApiResponse struct {
-	Count    int               `json:"count"`
-	Next     string            `json:"next"`
-	Previous interface{}       `json:"previous"`
-	Results  []ApiResultStruct `json:"results"`
-}
-
-type Film struct {
-	Title        string   `json:"title"`
-	EpisodeId    int      `json:"episode_id"`
-	OpeningCrawl string   `json:"opening_crawl"`
-	ReleaseDate  string   `json:"release_date"`
-	Characters   []string `json:"characters"`
-	CommentCount int64    `json:"film_count"`
-}
-
-type FilmsResponse struct {
-	Count    int     `json:"count"`
-	Next     *string `json:"next"`
-	Previous *string `json:"previous"`
-	Results  []Film  `json:"results"`
-}
-
-type ApiResultStruct struct {
-	Name      string   `json:"name"`
-	Height    string   `json:"height"`
-	Mass      string   `json:"mass"`
-	HairColor string   `json:"hair_color"`
-	SkinColor string   `json:"skin_color"`
-	EyeColor  string   `json:"eye_color"`
-	BirthYear string   `json:"birth_year"`
-	Gender    string   `json:"gender"`
-	Homeworld string   `json:"homeworld"`
-	Films     []string `json:"films"`
-	Species   []string `json:"species"`
-	Vehicles  []string `json:"vehicles"`
-	Starships []string `json:"starships"`
-	Created   string   `json:"created"`
-	Edited    string   `json:"edited"`
-	Url       string   `json:"url"`
-}
-
-type APIResponseCharacter struct {
-	Url     string    `json:"url"`
-	Name    string    `json:"name"`
-	Gender  string    `json:"gender"`
-	Created time.Time `json:"created"`
-	URL     string    `json:"url"`
-	Height  int       `json:"height"`
-	Movies  []string  `json:"movies"`
-}
-
-type Character struct {
-	Id      int       `json:"id"`
-	Name    string    `json:"name"`
-	Gender  string    `json:"gender"`
-	Created time.Time `json:"created"`
-	// URL            string    `json:"url"`
-	HeightInCM     int   `json:"height_in_cm"`
-	HeightInFeet   int   `json:"height_in_feet"`
-	HeightInInches int   `json:"height_in_inches"`
-	Movies         []int `json:"movies"`
-}
-
-// I want the struct to be in this form
-
-type NewCharacter struct {
-	Id      int    `json:"id"`
-	Name    string `json:"name"`
-	Height  string `json:"height"`
-	Gender  string `json:"gender"`
-	Films   []int  `json:"films"`
-	Created string `json:"created"`
-}
-
-type CharactersResponse struct {
-	Count    int         `json:"count"`
-	Next     string      `json:"next"`
-	Previous interface{} `json:"previous"`
-	Results  []Character `json:"results"`
-}
-
-//atm current currently
-func FilterAndSortCharacters(characters []Character, filter string, sortBy string, sortOrder string) ([]Character, int, float64, float64, float64, error) {
+// Filter characters by gender if filter parameter is present
+// Sort characters by the specified field and order
+// Calculate and return metadata
+func FilterAndSortCharacters(characters []models.Character, filter string, sortBy string, sortOrder string) ([]models.Character, int, float64, float64, float64, error) {
 	// Filter characters by gender if filter parameter is present
 	if filter != "" {
-		filteredCharacters := make([]Character, 0)
+		filteredCharacters := make([]models.Character, 0)
 		for _, char := range characters {
 			if char.Gender == filter {
 				filteredCharacters = append(filteredCharacters, char)
@@ -157,17 +74,17 @@ func FilterAndSortCharacters(characters []Character, filter string, sortBy strin
 	return characters, len(characters), float64(totalHeightInCm), float64(totalHeightInFeet), float64(totalHeightInInches), nil
 }
 
-// func GetMetadata(characters []Character, genderFilter string) (int, float64, float64)
-
+// load characters to redis or
+// fetch from swapi and load to redis
 func FetchCharacters(movieID string) error {
-	films := []Film{}
+	films := []models.Film{}
 
 	redisInstance := cache.NewRedisCache()
 	err := redisInstance.Get("films", &films)
 	if err != nil {
 		return err
 	}
-	var targetFilm Film
+	var targetFilm models.Film
 	for _, film := range films {
 		if strconv.Itoa(film.EpisodeId) == movieID {
 			targetFilm = film
@@ -180,8 +97,9 @@ func FetchCharacters(movieID string) error {
 	return nil
 }
 
+// update comment count in redis if a new comment was added
 func UpdateCount(filmId string) error {
-	films := []Film{}
+	films := []models.Film{}
 	redisInstance := cache.NewRedisCache()
 	err := redisInstance.Get("films", &films)
 
@@ -202,36 +120,8 @@ func UpdateCount(filmId string) error {
 	return nil
 }
 
-func FetchFilmDataFromRedis(id string) (*Film, error) {
-	films := []Film{}
-	// film := Film{}
-	var foundFilm *Film
-
-	redisInstance := cache.NewRedisCache()
-	err := redisInstance.Get("films", &films)
-	if err != nil {
-		return foundFilm, err
-	}
-
-	for _, filmObj := range films {
-		urlID, err := strconv.Atoi(id)
-		if err != nil {
-			return foundFilm, customerror.FailedIdConversion
-		}
-		if filmObj.EpisodeId == urlID {
-			foundFilm = &filmObj
-			break
-		}
-	}
-
-	if foundFilm == nil {
-		return foundFilm, customerror.NotFoundInCache
-	}
-	return foundFilm, nil
-}
-
 func FetchFilmFromRedis(id string) (int, error) {
-	films := []Film{}
+	films := []models.Film{}
 	redisInstance := cache.NewRedisCache()
 	err := redisInstance.Get("films", &films)
 	if err != nil {
@@ -240,7 +130,7 @@ func FetchFilmFromRedis(id string) (int, error) {
 		}
 		return 0, err
 	}
-	var foundFilm *Film
+	var foundFilm *models.Film
 	for _, filmObj := range films {
 		urlID, err := strconv.Atoi(id)
 		if err != nil {
@@ -258,8 +148,10 @@ func FetchFilmFromRedis(id string) (int, error) {
 	return foundFilm.EpisodeId, nil
 }
 
+// load films to redis or fetch from swapi and
+// load to redis also return just error if ther is one
 func LoadFilms() error {
-	films := []Film{}
+	films := []models.Film{}
 	redisInstance := cache.NewRedisCache()
 
 	err := redisInstance.Get("films", &films)
@@ -278,13 +170,13 @@ func LoadFilms() error {
 	}
 	defer res.Body.Close()
 
-	var filmsResponse FilmsResponse
+	var filmsResponse models.FilmsResponse
 	if err := json.NewDecoder(res.Body).Decode(&filmsResponse); err != nil {
 		return customerror.DecodeError
 	}
 
 	for _, film := range filmsResponse.Results {
-		f := Film{
+		f := models.Film{
 			Title:        film.Title,
 			EpisodeId:    film.EpisodeId,
 			OpeningCrawl: film.OpeningCrawl,
@@ -302,9 +194,10 @@ func LoadFilms() error {
 
 }
 
-func LoadCharacters() ([]Character, error) {
+// fetch from redis or load characters from swapi
+func LoadCharacters() ([]models.Character, error) {
 	redisInstance := cache.NewRedisCache()
-	var characters []Character
+	var characters []models.Character
 
 	err := redisInstance.Get("characters", &characters)
 	if err == nil && len(characters) > 0 {
@@ -312,7 +205,7 @@ func LoadCharacters() ([]Character, error) {
 	}
 
 	apiUrl := "https://swapi.dev/api/people/"
-	characterChan := make(chan Character)
+	characterChan := make(chan models.Character)
 	doneChan := make(chan bool)
 	errorChan := make(chan error)
 	var wg sync.WaitGroup
@@ -330,14 +223,14 @@ func LoadCharacters() ([]Character, error) {
 			return nil, customerror.FailedFetch
 		}
 
-		var response ApiResponse
+		var response models.ApiResponse
 		if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
 			return nil, customerror.DecodeError
 		}
 
 		for _, char := range response.Results {
 			wg.Add(1)
-			go func(char ApiResultStruct) {
+			go func(char models.ApiResultStruct) {
 				defer wg.Done()
 
 				movieIds := []int{}
@@ -374,7 +267,7 @@ func LoadCharacters() ([]Character, error) {
 					return
 				}
 
-				c := Character{
+				c := models.Character{
 					Id:             charID,
 					Name:           char.Name,
 					Gender:         char.Gender,
@@ -413,9 +306,10 @@ func LoadCharacters() ([]Character, error) {
 	}
 }
 
-func FetchFilms() ([]Film, error) {
-	films := []Film{}
-	newMovies := []Film{}
+// fetch movies from redis or swapui endpoint and return movie
+func FetchFilms() ([]models.Film, error) {
+	films := []models.Film{}
+	newMovies := []models.Film{}
 
 	redisInstance := cache.NewRedisCache()
 	err := redisInstance.Get("films", &films)
@@ -431,7 +325,7 @@ func FetchFilms() ([]Film, error) {
 	}
 	defer res.Body.Close()
 
-	var filmsResponse FilmsResponse
+	var filmsResponse models.FilmsResponse
 	if err := json.NewDecoder(res.Body).Decode(&filmsResponse); err != nil {
 		return nil, customerror.DecodeError
 	}
@@ -442,7 +336,7 @@ func FetchFilms() ([]Film, error) {
 			return nil, err
 		}
 
-		newMovie := Film{
+		newMovie := models.Film{
 			Title:        film.Title,
 			EpisodeId:    film.EpisodeId,
 			OpeningCrawl: film.OpeningCrawl,

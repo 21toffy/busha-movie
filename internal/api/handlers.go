@@ -17,10 +17,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type CommentRequest struct {
-	Comment string `json:"comment, omitempty" validate:"required,max=500" binding:"required"`
-}
-
 // @Summary Fetch film characters
 // @Description Fetches all characters for a given film
 // @Tags character
@@ -198,7 +194,7 @@ func GetCommentsHandler() gin.HandlerFunc {
 func SaveCommentHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
-		var comment CommentRequest
+		var comment models.CommentRequest
 		var dbComment models.Comment
 
 		if err := c.ShouldBindJSON(&comment); err != nil {

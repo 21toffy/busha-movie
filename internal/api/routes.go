@@ -28,7 +28,6 @@ func SetupRoutes(router *gin.Engine) {
 	router.GET("/films/:id/comments", GetFIlmCommentsHandler())
 	router.POST("/films/:id/comment/create", SaveCommentHandler())
 	router.GET("/films/all", FetchFilmsHandler())
-	router.Use(logRequest())
 	docs.SwaggerInfo.BasePath = ""
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
