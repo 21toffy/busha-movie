@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/21toffy/busha-movie/internal/config"
+	"github.com/21toffy/busha-movie/internal/models"
 	"github.com/spf13/viper"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -38,7 +39,7 @@ func NewDatabase() (*gorm.DB, error) {
 }
 
 func Migrate(db *gorm.DB) error {
-	if err := db.AutoMigrate(&Comment{}); err != nil {
+	if err := db.AutoMigrate(&models.Comment{}); err != nil {
 		return err
 	}
 	return nil

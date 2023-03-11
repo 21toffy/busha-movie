@@ -2,7 +2,6 @@ package requests
 
 import (
 	"encoding/json"
-	"fmt"
 	"math"
 
 	// "fmt"
@@ -309,7 +308,6 @@ func LoadCharacters() ([]Character, error) {
 
 	err := redisInstance.Get("characters", &characters)
 	if err == nil && len(characters) > 0 {
-		fmt.Println("I am here vvvvvvvvvvvvvvvvvvvvvvvv")
 		return characters, nil
 	}
 
@@ -411,83 +409,9 @@ func LoadCharacters() ([]Character, error) {
 		}
 		return characters, nil
 	case err := <-errorChan:
-		fmt.Println(len(characters), "this is the length if characters")
 		return nil, err
 	}
 }
-
-//character this current
-// func LoadCharacters() ([]Character, error) {
-// 	characters := []Character{}
-// 	redisInstance := cache.NewRedisCache()
-// 	err := redisInstance.Get("characters", &characters)
-
-// 	if err == nil {
-// 		if len(characters) < 1 {
-// 			res, err := http.Get("https://swapi.dev/api/people/")
-// 			if err != nil {
-// 				return nil, customerror.FailedFetch
-// 			}
-// 			defer res.Body.Close()
-
-// 			var response ApiResponse
-// 			if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
-// 				return nil, customerror.DecodeError
-// 			}
-
-// 			for _, char := range response.Results {
-// 				movieIds := []int{}
-// 				for _, singleID := range char.Films {
-// 					movieId, err := utils.GetSingleNumberFromUrl(singleID)
-// 					if err != nil {
-// 						return nil, err
-// 					}
-// 					movieIds = append(movieIds, movieId)
-// 				}
-// 				if err != nil {
-// 					return nil, err
-// 				}
-// 				height, err := strconv.Atoi(char.Height)
-
-// 				if err != nil {
-// 					return nil, customerror.FailedIdConversion
-// 				}
-
-// 				timeGotten, timeErr := utils.StringToTime(char.Created)
-// 				if timeErr != nil {
-// 					return nil, customerror.FailedTimeConversion
-// 				}
-// 				if err != nil {
-// 					return nil, customerror.FailedIdConversion
-// 				}
-// 				charID, err := utils.GetSingleNumberFromUrl(char.Url)
-// 				c := Character{
-// 					Id:             charID,
-// 					Name:           char.Name,
-// 					Gender:         char.Gender,
-// 					Created:        timeGotten,
-// 					HeightInCM:     height,
-// 					HeightInFeet:   utils.CmToFeet(height),
-// 					HeightInInches: utils.CmToInches(height),
-// 					Movies:         movieIds,
-// 				}
-// 				characters = append(characters, c)
-// 			}
-
-// 			err = redisInstance.Set("characters", characters, time.Hour)
-// 			if err != nil {
-// 				return nil, customerror.FailedCacheSetting
-// 			}
-// 			return characters, nil
-// 		}
-// 		return characters, nil
-
-// 	}
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return characters, nil
-// }
 
 func FetchFilms() ([]Film, error) {
 	films := []Film{}
@@ -529,7 +453,6 @@ func FetchFilms() ([]Film, error) {
 		newMovies = append(newMovies, newMovie)
 	}
 
-	// Set films key in redis to the new slice
 	err = redisInstance.Set("films", newMovies, time.Hour)
 	if err != nil {
 		return nil, customerror.FailedCacheSetting

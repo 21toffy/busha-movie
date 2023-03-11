@@ -3,23 +3,17 @@ package cache
 import (
 	"context"
 	"encoding/json"
-	// "errors"
+
 	"fmt"
-	"github.com/21toffy/busha-movie/internal/customerror"
-	// "github.com/21toffy/busha-movie/internal/utils"
 
 	"time"
 
+	"github.com/21toffy/busha-movie/internal/customerror"
 	"github.com/go-redis/redis/v8"
 	"github.com/spf13/viper"
 )
 
 var redisClient *redis.Client
-
-// type RedisCache struct {
-// 	client *redis.Client
-// 	ctx    context.Context
-// }
 
 func InitRedisCache() *redis.Client {
 	if redisClient == nil {
@@ -56,16 +50,13 @@ func NewRedisCache() *RedisCache {
 	}
 }
 
+// function to get a particular data with an associated key from redis
 func (c *RedisCache) Get(key string, result interface{}) error {
 	data, err := c.client.Get(c.ctx, key).Bytes()
 	if err != nil {
 		if err == redis.Nil {
-			// Key does not exist in Redis
-			fmt.Println("here")
-
 			return customerror.ErrCacheMiss
 		}
-		fmt.Println("there")
 		return customerror.OtherCacheError
 	}
 
@@ -77,6 +68,7 @@ func (c *RedisCache) Get(key string, result interface{}) error {
 	return nil
 }
 
+// function to load/store data into redis
 func (c *RedisCache) Set(key string, value interface{}, expiration time.Duration) error {
 	data, err := json.Marshal(value)
 	if err != nil {

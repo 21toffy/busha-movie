@@ -4,9 +4,133 @@
         "contact": {}
     },
     "paths": {
-        "/example/helloworld": {
+        "/films/all": {
             "get": {
-                "description": "do ping",
+                "description": "Retrieve all films",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "films"
+                ],
+                "summary": "Get all films",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/requests.Film"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/films/comments": {
+            "get": {
+                "description": "Retrieve all comments in reverse chronological order",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comments"
+                ],
+                "summary": "Get all comments",
+                "operationId": "get-comments",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.CommentResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/films/{id}/character/{gender}/{sort}/{order}": {
+            "get": {
+                "description": "Fetches all characters for a given film",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "character"
+                ],
+                "summary": "Fetch film characters",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Film ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "sort by (name, gender, height)",
+                        "name": "sort",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "sort by (asc, desc)",
+                        "name": "order",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "The gender to filter by (male, female)",
+                        "name": "gender",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/requests.Character"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/films/{id}/comment/create": {
+            "post": {
+                "description": "Saves a comment for a film and updates the comment count in cache",
                 "consumes": [
                     "application/json"
                 ],
@@ -14,16 +138,213 @@
                     "application/json"
                 ],
                 "tags": [
-                    "example"
+                    "comments"
                 ],
-                "summary": "ping example",
+                "summary": "Save a comment for a film",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Film ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Comment payload",
+                        "name": "comment",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.CommentRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.CommentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
+                }
+            }
+        },
+        "/films/{id}/comments": {
+            "get": {
+                "description": "Returns a list of comments for a given film ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comments"
+                ],
+                "summary": "Get comments for a film",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Film ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.CommentResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "api.CommentRequest": {
+            "type": "object",
+            "required": [
+                "comment"
+            ],
+            "properties": {
+                "comment": {
+                    "type": "string",
+                    "maxLength": 500
+                }
+            }
+        },
+        "models.CommentResponse": {
+            "type": "object",
+            "required": [
+                "comment"
+            ],
+            "properties": {
+                "comment": {
+                    "type": "string",
+                    "maxLength": 500
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "ip_address": {
+                    "type": "string"
+                },
+                "movie_id": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "requests.Character": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "height_in_cm": {
+                    "description": "URL            string    `json:\"url\"`",
+                    "type": "integer"
+                },
+                "height_in_feet": {
+                    "type": "integer"
+                },
+                "height_in_inches": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "movies": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "requests.Film": {
+            "type": "object",
+            "properties": {
+                "characters": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "episode_id": {
+                    "type": "integer"
+                },
+                "film_count": {
+                    "type": "integer"
+                },
+                "opening_crawl": {
+                    "type": "string"
+                },
+                "release_date": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         }
