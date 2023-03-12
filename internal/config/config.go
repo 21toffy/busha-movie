@@ -20,7 +20,7 @@ func InitConfig() error {
 	}
 
 	// Set default values for any missing configuration options
-	viper.SetDefault("port", "8080")
+	viper.SetDefault("port", "8081")
 	viper.SetDefault("db.host", "localhost")
 	viper.SetDefault("db.port", "5432")
 	viper.SetDefault("db.user", "postgres")
