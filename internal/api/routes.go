@@ -23,11 +23,13 @@ import (
 // @BasePath /
 // @schemes http
 func SetupRoutes(router *gin.Engine) {
+	router.GET("/", Home())
 	router.GET("/films/comments", GetCommentsHandler())
 	router.GET("/films/:id/character/:gender/:sort/:order", FetchFilmCharacter())
 	router.GET("/films/:id/comments", GetFIlmCommentsHandler())
 	router.POST("/films/:id/comment/create", SaveCommentHandler())
 	router.GET("/films/all", FetchFilmsHandler())
+
 	docs.SwaggerInfo.BasePath = ""
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 

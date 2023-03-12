@@ -287,3 +287,9 @@ func FetchFilmsHandler() gin.HandlerFunc {
 		return
 	}
 }
+
+func Home() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.File("internal/templates/home.html")
+	}
+}
