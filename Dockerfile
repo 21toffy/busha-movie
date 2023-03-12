@@ -25,11 +25,11 @@ WORKDIR /app
 # Copy the application binary from the build stage
 COPY --from=builder /app/main .
 
-COPY wait-for.sh /app/wait-for.sh
-COPY start.sh /app/start.sh
+# COPY wait-for.sh /app/wait-for.sh
+# COPY start.sh /app/start.sh
 
-RUN chmod +x /app/wait-for.sh
-RUN chmod +x /app/start.sh
+# RUN chmod +x /app/wait-for.sh
+# RUN chmod +x /app/start.sh
 
 
 COPY ./internal/config/config.toml /app/config.toml
