@@ -25,7 +25,11 @@ func InitConfig() error {
 	viper.SetDefault("db.port", "5432")
 	viper.SetDefault("db.user", "postgres")
 	viper.SetDefault("db.password", "password")
-	viper.SetDefault("db.database", "movies_db")
+	viper.SetDefault("db.database", "movie_db")
+	viper.SetDefault("redis.addr", "movieapi_redis:6379")
+	viper.SetDefault("redis.password", "")
+	viper.SetDefault("redis.db", "0")
+
 	return nil
 }
 

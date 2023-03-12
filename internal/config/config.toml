@@ -1,11 +1,13 @@
 port = "8080"
 
 [db]
-host = "localhost"
+host = "movieapi_db"
 port = "5432"
-user = "admin"
+user = "postgres"
 password = "password"
-database = "movies_db"
-DB_USER = "admin"
-DB_PASSWORD = "password"
-DB_NAME = "movies_db"
+database = "movie_db"
+
+[redis]
+addr = "movieapi_redis:6379"
+password = ""
+db = "0"

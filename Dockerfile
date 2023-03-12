@@ -1,41 +1,53 @@
-# Start from the official golang image
-FROM golang:1.17-alpine AS build
+# Build stage
+FROM golang:alpine AS builder
 
-# Set the current working directory inside the container
+# Set the working directory to the app directory
 WORKDIR /app
 
-# Copy go.mod and go.sum files to the container
+# Copy the go.mod and go.sum files to the container
 COPY go.mod go.sum ./
 
-# Download and cache go dependencies
+# Download the Go module dependencies
 RUN go mod download
 
-# Copy the source code into the container
+# Copy the rest of the application source code to the container
 COPY . .
 
-RUN go build -o app ./cmd/api/main.go
+# Build the application binary
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api/main.go
 
-# Start from a new image
-FROM alpine:latest
+# Final stage
+FROM alpine:3.14
 
-# Install required system libraries
-RUN apk --no-cache add ca-certificates
-
-# Set the current working directory inside the container
+# Set the working directory to the app directory
 WORKDIR /app
 
-# Copy the binary file from the build stage
-COPY --from=build /app/app .
+# Copy the application binary from the build stage
+COPY --from=builder /app/main .
 
-# Set environment variables for Postgres
+COPY wait-for.sh /app/wait-for.sh
+COPY start.sh /app/start.sh
+
+RUN chmod +x /app/wait-for.sh
+RUN chmod +x /app/start.sh
+
+
+COPY ./internal/config/config.toml /app/config.toml
+
+# Install the CA certificates package
+RUN apk --no-cache add ca-certificates
+
+# Expose port 8081
+EXPOSE 8081
+
+# Set the environment variables
 ENV POSTGRES_USER=postgres \
     POSTGRES_PASSWORD=password \
-    POSTGRES_DB=movies_db \
+    POSTGRES_DB=movie_db \
     POSTGRES_HOST=db \
     POSTGRES_PORT=5432
 
-# Expose port 8080 for the application
-EXPOSE 8080
+ENV CONFIG_FILE=/app/config.toml
 
 # Start the application
-CMD ["./app"]
+CMD ["/app/main"]

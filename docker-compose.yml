@@ -1,49 +1,54 @@
 version: '3.9'
 
 services:
-  app:
-    build:
-      context: .
-    image: movieapi
-    container_name: movieapi
-    restart: always
-    ports:
-      - "8090:8090"
-    volumes:
-      - ./config:/app/config
-    environment:
-      - REDIS_ADDR=redis:6379
-      - DB_HOST=db
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - PGDATA=/var/lib/postgresql/data/pgdata
-    depends_on:
-      - db
-      - redis
-    # environment:
-    #   POSTGRES_USER: postgres
-    #   POSTGRES_PASSWORD: password
-    #   POSTGRES_DB: movies_db
-    #   DB_HOST: db
-    #   REDIS_ADDR: redis:6379
-
   db:
     image: postgres
     restart: always
-    # environment:
-    #   POSTGRES_USER: postgres
-    #   POSTGRES_PASSWORD: password
-    #   POSTGRES_DB: movies_db
-
+    container_name: "movieapi_db"
+    env_file:
+      - ./internal/config/.env
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data/pgdata
+      - ./data/postgres:/var/lib/postgresql/data2/pgdata
       - ./config:/app/config
+    networks:
+      - movieapi
+    ports:
+      - "5432:5432"
     environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=movie_db
+      - POSTGRES_PORT=5432
+
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: movieapi
+    container_name: "movieapi_api"
+    restart: always
+    networks:
+      - movieapi
+    ports:
+      - "8081:8081"
+    environment:
+      - DB_SOURCE=:movieapi_db//postgres:password@postgres:5432/movie_db?sslmode=disable
+    depends_on:
+      - db
+    volumes:
+      - ./config:/app/internal/config
+    command: ["/app/main"]
 
   redis:
     image: redis
     restart: always
+    container_name: "movieapi_redis"
+    networks:
+      - movieapi
+    ports:
+      - "6379:6379"
+
+networks:
+  movieapi:
+    driver: bridge
